@@ -14,4 +14,4 @@ COPY . .
 RUN go build -o /usr/local/bin/ -v ./...
 RUN chmod a+x /usr/local/bin/app
 
-CMD [ "/usr/local/bin/app" ]
+CMD [ "/usr/local/bin/app", "./.env"]
