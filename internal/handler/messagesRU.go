@@ -17,4 +17,9 @@ const (
 	dataMessage            = "Сервис: `%v`\n" + "Логин: `%v`\n" + "Пароль: `%v`"
 	serviceNotFoundMessage = "Сервис `%v` не найден"
 	serviceDeletedMessage  = "Данные для сервиса `%v` удалены"
+	invalidSymbolMessage   = "Сообщение содержит недопустимый символ: %v"
+	startMessage           = "Telegram-бот для хранения паролей.\n\n" +
+		helpMessage + "\n\n" +
+		"Данный бот разработан @yu_leo в рамках отбора на стажировку VK по направлению \"Разработчик системы кластеризации Tarantool\".\n\n" +
+		"Исходный код и описание разработанного решения в репозитории: https://github.com/Yu-Leo/vk-internship-tarantool-2023"
 )

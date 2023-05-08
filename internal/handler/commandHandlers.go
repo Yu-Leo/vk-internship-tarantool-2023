@@ -10,7 +10,7 @@ import (
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/pkg/encoding"
 )
 
-func (h *Handler) Set(msg *tgbotapi.Message) (string, error) {
+func (h *Handler) set(msg *tgbotapi.Message) (string, error) {
 	input := strings.Split(msg.Text, " ")
 	if len(input) < 4 {
 		return invalidSetInputMessage, nil
@@ -31,7 +31,7 @@ func (h *Handler) Set(msg *tgbotapi.Message) (string, error) {
 	return text, nil
 }
 
-func (h *Handler) Get(msg *tgbotapi.Message) (string, error) {
+func (h *Handler) get(msg *tgbotapi.Message) (string, error) {
 	input := strings.Split(msg.Text, " ")
 	if len(input) < 2 {
 		return invalidGetInputMessage, nil
@@ -56,7 +56,7 @@ func (h *Handler) Get(msg *tgbotapi.Message) (string, error) {
 	return text, nil
 }
 
-func (h *Handler) Del(msg *tgbotapi.Message) (string, error) {
+func (h *Handler) del(msg *tgbotapi.Message) (string, error) {
 	input := strings.Split(msg.Text, " ")
 	if len(input) < 2 {
 		return invalidDelInputMessage, nil

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -11,22 +13,14 @@ import (
 
 const msgDeleteDelay = 10 * time.Second
 
-type commandHandler = func(msg *tgbotapi.Message) (string, error)
-
 type Handler struct {
-	logger          *logrus.Logger
-	bot             *tgbotapi.BotAPI
-	noteRepository  repositories.NoteRepository
-	commandHandlers map[string]commandHandler
+	logger         *logrus.Logger
+	bot            *tgbotapi.BotAPI
+	noteRepository repositories.NoteRepository
 }
 
 func NewBotHandler(logger *logrus.Logger, bot *tgbotapi.BotAPI, repo repositories.NoteRepository) *Handler {
 	h := &Handler{logger: logger, bot: bot, noteRepository: repo}
-	h.commandHandlers = map[string]commandHandler{
-		"set": h.Set,
-		"get": h.Get,
-		"del": h.Del,
-	}
 	return h
 }
 
@@ -36,40 +30,80 @@ func (h *Handler) HandleUpdates(updates <-chan tgbotapi.Update) {
 		if msg == nil || msg.Chat == nil {
 			continue
 		}
-		h.handleMessage(msg)
+		reply := tgbotapi.NewMessage(msg.Chat.ID, "")
+		reply.ReplyToMessageID = msg.MessageID
+
+		if !h.validateMessage(reply, msg) {
+			continue
+		}
+
+		go h.handleMessage(reply, msg)
 	}
 }
 
-func (h *Handler) handleMessage(msg *tgbotapi.Message) {
-	reply := tgbotapi.NewMessage(msg.Chat.ID, "")
-	reply.ReplyToMessageID = msg.MessageID
+func (h *Handler) handleMessage(reply tgbotapi.MessageConfig, msg *tgbotapi.Message) {
+	var isMessageDeleted bool
+	var text string
+	var err error
 
-	handlerFunc, found := h.commandHandlers[msg.Command()]
-
-	if !found {
-		reply.Text = helpMessage
-		err := h.sendMessage(reply, false)
-		if err != nil {
-			h.logger.Error(err)
-		}
-		return
+	switch msg.Command() {
+	case "start":
+		text = startMessage
+	case "set":
+		text, err = h.set(msg)
+		reply.ParseMode = "markdown"
+		isMessageDeleted = true
+	case "get":
+		text, err = h.get(msg)
+		reply.ParseMode = "markdown"
+		isMessageDeleted = true
+	case "del":
+		text, err = h.del(msg)
+		reply.ParseMode = "markdown"
+	default:
+		text = helpMessage
 	}
 
-	go func(msg *tgbotapi.Message) {
-		text, err := handlerFunc(msg)
+	if err != nil {
+		text = internalErrorMessage
+		h.logger.Error(err)
+	}
 
-		if err != nil {
-			text = internalErrorMessage
-			h.logger.Error(err)
-		}
+	reply.Text = text
+	err = h.sendMessage(reply, isMessageDeleted)
+	if err != nil {
+		h.logger.Error(err)
+	}
+}
 
-		reply.Text = text
-		reply.ParseMode = "MarkDown"
-		err = h.sendMessage(reply, true)
-		if err != nil {
-			h.logger.Error(err)
+func (h *Handler) validateMessage(reply tgbotapi.MessageConfig, msg *tgbotapi.Message) bool {
+	symbol := findInvalidSymbol(msg.Text[1:])
+
+	if symbol == "" {
+		return true
+	}
+
+	reply.Text = fmt.Sprintf(invalidSymbolMessage, symbol)
+
+	err := h.sendMessage(reply, false)
+	if err != nil {
+		h.logger.Error(err)
+	}
+
+	return false
+}
+
+func findInvalidSymbol(str string) string {
+	const availableSymbols = "abcdefghijklmnopqrstuvwxyz" +
+		"абвгдеёжзийклмнопрстуфхцчшщъыьэюя" +
+		"!#$%&()*+,-./0123456789:;<=>?@[]^_{|}~; "
+
+	for _, symbol := range str {
+		if !strings.Contains(availableSymbols, strings.ToLower(string(symbol))) {
+			return string(symbol)
 		}
-	}(msg)
+	}
+	return ""
 }
 
 func (h *Handler) sendMessage(msg tgbotapi.MessageConfig, delete bool) error {
