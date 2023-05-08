@@ -20,13 +20,14 @@ func NewBotHandler(logger *logrus.Logger, bot *tgbotapi.BotAPI, repo repositorie
 
 func (h *Handler) HandleUpdates(updates <-chan tgbotapi.Update) {
 	for update := range updates {
-		if update.Message != nil {
-			h.logger.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-			msg.ReplyToMessageID = update.Message.MessageID
-
-			h.bot.Send(msg)
+		if update.Message == nil {
+			continue
 		}
+		h.logger.Infof("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+		msg.ReplyToMessageID = update.Message.MessageID
+
+		h.bot.Send(msg)
 	}
 }
