@@ -1,11 +1,15 @@
 package handler
 
 import (
+	"time"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/repositories"
 )
+
+const msgDeleteDelay = 10 * time.Second
 
 type commandHandler = func(msg *tgbotapi.Message) (string, error)
 
@@ -44,7 +48,10 @@ func (h *Handler) handleMessage(msg *tgbotapi.Message) {
 
 	if !found {
 		reply.Text = helpMessage
-		h.send(reply)
+		err := h.sendMessage(reply, false)
+		if err != nil {
+			h.logger.Error(err)
+		}
 		return
 	}
 
@@ -58,13 +65,31 @@ func (h *Handler) handleMessage(msg *tgbotapi.Message) {
 
 		reply.Text = text
 		reply.ParseMode = "MarkDown"
-		h.send(reply)
+		err = h.sendMessage(reply, true)
+		if err != nil {
+			h.logger.Error(err)
+		}
 	}(msg)
 }
 
-func (h *Handler) send(msg tgbotapi.MessageConfig) {
-	_, err := h.bot.Send(msg)
+func (h *Handler) sendMessage(msg tgbotapi.MessageConfig, delete bool) error {
+	botMsg, err := h.bot.Send(msg)
 	if err != nil {
-		h.logger.Error(err)
+		return err
 	}
+
+	if !delete {
+		return nil
+	}
+
+	time.Sleep(msgDeleteDelay)
+
+	delMsg := tgbotapi.NewDeleteMessage(msg.ChatID, msg.ReplyToMessageID)
+	_, err = h.bot.Send(delMsg)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.bot.Send(tgbotapi.NewDeleteMessage(msg.ChatID, botMsg.MessageID))
+	return err
 }
