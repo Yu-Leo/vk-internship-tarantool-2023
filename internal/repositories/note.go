@@ -56,9 +56,9 @@ WHERE chat_id = $3 AND service_name = $4;`
 
 func (r *noteRepository) Get(chatID, serviceName string) (_ *models.Note, err error) {
 	q := `
-SELECT (service_name, login, password)
+SELECT service_name, login, password
 FROM notes
-WHERE notes.chat_id = $1 AND service_name = $2;`
+WHERE chat_id = $1 AND service_name = $2;`
 
 	var note models.Note
 	err = r.postgresConnection.QueryRow(context.Background(), q, chatID, serviceName).
