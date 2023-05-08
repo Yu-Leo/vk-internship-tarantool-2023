@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/spf13/viper"
 )
 
@@ -47,8 +45,4 @@ func LoadConfig(path string) (err error) {
 
 	Cfg = Config{TelegramBot: tgBotConfig, Database: dbConfig}
 	return nil
-}
-
-func (dc *DatabaseConfig) GetURL() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", dc.User, dc.Password, dc.Host, dc.Port, dc.Database)
 }
