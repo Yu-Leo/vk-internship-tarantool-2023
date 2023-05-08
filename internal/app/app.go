@@ -7,11 +7,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/config"
+	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/handler"
+	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/repositories"
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/pkg/postgresql"
 )
 
 func Run(logger *logrus.Logger) {
-
 	postgresConnection, err := postgresql.NewConnection(context.Background(), 2, &config.Cfg.Database)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -22,6 +23,8 @@ func Run(logger *logrus.Logger) {
 	}()
 
 	logger.Info("Open Postgres connection")
+
+	noteRepo := repositories.NewPostgresNoteRepository(postgresConnection)
 
 	bot, err := tgbotapi.NewBotAPI(config.Cfg.TelegramBot.Token)
 	if err != nil {
@@ -37,14 +40,6 @@ func Run(logger *logrus.Logger) {
 
 	updates := bot.GetUpdatesChan(u)
 
-	for update := range updates {
-		if update.Message != nil { // If we got a message
-			logger.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-			msg.ReplyToMessageID = update.Message.MessageID
-
-			bot.Send(msg)
-		}
-	}
+	botHandler := handler.NewBotHandler(logger, bot, noteRepo)
+	botHandler.HandleUpdates(updates)
 }
