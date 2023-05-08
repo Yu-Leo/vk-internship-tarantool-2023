@@ -43,7 +43,7 @@ func (h *Handler) handleMessage(msg *tgbotapi.Message) {
 	handlerFunc, found := h.commandHandlers[msg.Command()]
 
 	if !found {
-		reply.Text = invalidCommandMessage
+		reply.Text = helpMessage
 		h.send(reply)
 		return
 	}

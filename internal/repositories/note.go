@@ -12,7 +12,7 @@ import (
 )
 
 type NoteRepository interface {
-	Set(note models.Note) error
+	Set(userID string, note *models.Note) error
 	Get(userID, serviceName string) (*models.Note, error)
 	Del(userID, serviceName string) error
 }
@@ -27,14 +27,14 @@ func NewPostgresNoteRepository(pc postgresql.Connection) NoteRepository {
 	}
 }
 
-func (r *noteRepository) Set(note models.Note) (err error) {
+func (r *noteRepository) Set(userID string, note *models.Note) (err error) {
 	var pgErr *pgconn.PgError
 
 	q1 := `
 INSERT INTO notes (user_id, service, login, password)
 VALUES ($1, $2, $3, $4);`
 	_, err = r.postgresConnection.Exec(context.Background(), q1,
-		note.UserID, note.ServiceName, note.Login, note.Password)
+		userID, note.ServiceName, note.Login, note.Password)
 	if err == nil {
 		return nil
 	}
@@ -46,7 +46,7 @@ SET login = $1, password = $2
 WHERE user_id = $3 AND service = $4;`
 
 		_, err = r.postgresConnection.Exec(context.Background(), q2,
-			note.Login, note.Password, note.UserID, note.ServiceName)
+			note.Login, note.Password, userID, note.ServiceName)
 		if err != nil {
 			return err
 		}
@@ -56,13 +56,13 @@ WHERE user_id = $3 AND service = $4;`
 
 func (r *noteRepository) Get(userID, serviceName string) (_ *models.Note, err error) {
 	q := `
-SELECT (user_id, service, login, password)
+SELECT (service, login, password)
 FROM notes
 WHERE notes.user_id = $1 AND service = $2;`
 
 	var note models.Note
 	err = r.postgresConnection.QueryRow(context.Background(), q, userID, serviceName).
-		Scan(&note.UserID, &note.ServiceName, &note.Login, &note.Password)
+		Scan(&note.ServiceName, &note.Login, &note.Password)
 	if err != nil {
 		return nil, err
 	}
