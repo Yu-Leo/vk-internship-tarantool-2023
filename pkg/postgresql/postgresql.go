@@ -12,6 +12,8 @@ import (
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/config"
 )
 
+const timeDelta = 2 * time.Second
+
 type Connection interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
@@ -21,8 +23,6 @@ type Connection interface {
 }
 
 func NewConnection(ctx context.Context, maxAttempts int, cfg *config.DatabaseConfig) (conn Connection, err error) {
-	const timeDelta = 2 * time.Second
-
 	dbURL := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 	var pool *pgxpool.Pool
 
