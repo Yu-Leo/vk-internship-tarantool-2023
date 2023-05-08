@@ -7,7 +7,7 @@ import (
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/app"
 )
 
-const configPath = "config/config.yaml"
+const configPath = "./dev.env"
 
 func main() {
 	err := config.LoadConfig(configPath)

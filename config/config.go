@@ -9,62 +9,43 @@ import (
 var Cfg Config
 
 type Config struct {
-	TelegramBot TelegramBotConfig `yaml:"telegramBot"`
-	Database    DatabaseConfig    `yaml:"database"`
+	TelegramBot TelegramBotConfig
+	Database    DatabaseConfig
 }
 
 type TelegramBotConfig struct {
-	Token string `yaml:"token"`
+	Token string `mapstructure:"TG_BOT_TOKEN"`
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Database string `yaml:"database"`
-	User     string `yaml:"username"`
-	Password string `yaml:"password"`
+	Host     string `mapstructure:"POSTGRES_HOST"`
+	Port     int    `mapstructure:"POSTGRES_PORT"`
+	Database string `mapstructure:"POSTGRES_DB"`
+	User     string `mapstructure:"POSTGRES_USER"`
+	Password string `mapstructure:"POSTGRES_PASSWORD"`
 }
 
-func LoadConfig(path string) error {
-	var err error
-	var config Config
+func LoadConfig(path string) (err error) {
+	var tgBotConfig TelegramBotConfig
+	var dbConfig DatabaseConfig
 
 	viper.SetConfigFile(path)
-
-	err = viper.BindEnv("telegramBot.token", "TG_BOT_TOKEN")
-	if err != nil {
-		return err
-	}
-	err = viper.BindEnv("database.host", "DB_HOST")
-	if err != nil {
-		return err
-	}
-	err = viper.BindEnv("database.port", "DB_PORT")
-	if err != nil {
-		return err
-	}
-	err = viper.BindEnv("database.user", "DB_USER")
-	if err != nil {
-		return err
-	}
-	err = viper.BindEnv("database.password", "DB_PASSWORD")
-	if err != nil {
-		return err
-	}
-	err = viper.BindEnv("database.database", "DB_DATABASE")
-	if err != nil {
-		return err
-	}
 	err = viper.ReadInConfig()
 	if err != nil {
 		return err
 	}
-	err = viper.Unmarshal(&config)
+
+	err = viper.Unmarshal(&tgBotConfig)
 	if err != nil {
 		return err
 	}
 
-	Cfg = config
+	err = viper.Unmarshal(&dbConfig)
+	if err != nil {
+		return err
+	}
+
+	Cfg = Config{TelegramBot: tgBotConfig, Database: dbConfig}
 	return nil
 }
 
