@@ -9,10 +9,9 @@ COPY go.sum /app/
 
 RUN go mod download
 
-COPY config /app/config
-COPY internal /app/internal
-COPY main.go /app
+COPY . .
 
-RUN go build -o /go-server
+RUN go build -o /usr/local/bin/ -v ./...
+RUN chmod a+x /usr/local/bin/app
 
-CMD [ "/go-server" ]
+CMD [ "/usr/local/bin/app" ]
