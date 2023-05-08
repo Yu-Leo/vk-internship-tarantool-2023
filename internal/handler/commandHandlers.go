@@ -7,6 +7,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/models"
+	"github.com/Yu-Leo/vk-internship-tarantool-2023/pkg/encoding"
 )
 
 func (h *Handler) Set(msg *tgbotapi.Message) (string, error) {
@@ -16,13 +17,17 @@ func (h *Handler) Set(msg *tgbotapi.Message) (string, error) {
 	}
 
 	note := getNoteFromSet(input)
+
+	rawPassword := note.Password
+	note.Password = encoding.Encode(note.Password)
+
 	err := h.noteRepository.Set(fmt.Sprint(msg.Chat.ID), note)
 
 	if err != nil {
 		return "", err
 	}
 
-	text := fmt.Sprintf(dataMessage, note.ServiceName, note.Login, note.Password)
+	text := fmt.Sprintf(dataMessage, note.ServiceName, note.Login, rawPassword)
 	return text, nil
 }
 
@@ -35,7 +40,12 @@ func (h *Handler) Get(msg *tgbotapi.Message) (string, error) {
 	serviceName := getServiceNameFromGetAndDel(input)
 
 	note, err := h.noteRepository.Get(fmt.Sprint(msg.Chat.ID), serviceName)
+	if err != nil {
+		text := fmt.Sprintf(serviceNotFoundMessage, serviceName)
+		return text, nil
+	}
 
+	note.Password, err = encoding.Decode(note.Password)
 	if err != nil {
 		text := fmt.Sprintf(serviceNotFoundMessage, serviceName)
 		return text, nil
