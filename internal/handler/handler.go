@@ -85,11 +85,11 @@ func (h *Handler) sendMessage(msg tgbotapi.MessageConfig, delete bool) error {
 	time.Sleep(msgDeleteDelay)
 
 	delMsg := tgbotapi.NewDeleteMessage(msg.ChatID, msg.ReplyToMessageID)
-	_, err = h.bot.Send(delMsg)
+	_, err = h.bot.Request(delMsg)
 	if err != nil {
 		return err
 	}
 
-	_, err = h.bot.Send(tgbotapi.NewDeleteMessage(msg.ChatID, botMsg.MessageID))
+	_, err = h.bot.Request(tgbotapi.NewDeleteMessage(msg.ChatID, botMsg.MessageID))
 	return err
 }
