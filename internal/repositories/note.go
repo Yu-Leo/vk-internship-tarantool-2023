@@ -2,13 +2,17 @@ package repositories
 
 import (
 	"context"
+	"errors"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/internal/models"
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/pkg/postgresql"
 )
 
 type NoteRepository interface {
-	Set(userID string, note models.Note) error
+	Set(note models.Note) error
 	Get(userID, serviceName string) (*models.Note, error)
 	Del(userID, serviceName string) error
 }
@@ -23,14 +27,29 @@ func NewPostgresNoteRepository(pc postgresql.Connection) NoteRepository {
 	}
 }
 
-func (r *noteRepository) Set(userID string, note models.Note) (err error) {
-	q := `
+func (r *noteRepository) Set(note models.Note) (err error) {
+	var pgErr *pgconn.PgError
+
+	q1 := `
 INSERT INTO notes (user_id, service, login, password)
 VALUES ($1, $2, $3, $4);`
-	_, err = r.postgresConnection.Exec(context.Background(), q,
+	_, err = r.postgresConnection.Exec(context.Background(), q1,
 		note.UserID, note.ServiceName, note.Login, note.Password)
-	if err != nil {
-		return err
+	if err == nil {
+		return nil
+	}
+
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		q2 := `
+UPDATE notes
+SET login = $1, password = $2
+WHERE user_id = $3 AND service = $4;`
+
+		_, err = r.postgresConnection.Exec(context.Background(), q2,
+			note.Login, note.Password, note.UserID, note.ServiceName)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -54,8 +73,8 @@ func (r *noteRepository) Del(userID, serviceName string) (err error) {
 	q := `
 DELETE
 FROM notes
-WHERE service = $1;`
-	_, err = r.postgresConnection.Exec(context.Background(), q, serviceName)
+WHERE user_id = $1 AND service = $2;`
+	_, err = r.postgresConnection.Exec(context.Background(), q, userID, serviceName)
 	if err != nil {
 		return err
 	}

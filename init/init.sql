@@ -7,5 +7,6 @@ CREATE TABLE notes
     service  varchar(80) NOT NULL,
     login    varchar(80) NOT NULL,
     password varchar(80) NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE (user_id, service)
 );

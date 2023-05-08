@@ -31,7 +31,7 @@ func Run(logger *logrus.Logger) {
 		logger.Panic(err)
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 
 	logger.Infof("Authorized on account %s", bot.Self.UserName)
 
