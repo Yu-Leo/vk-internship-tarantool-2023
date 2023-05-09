@@ -44,12 +44,37 @@
 
 ## :page_facing_up: Описание разработанного решения
 
+:heavy_exclamation_mark: **Бот запущен и доступен по адресу: https://t.me/yuleo_password_bot**
+
+Решение разработано с использованием языка **Go** и библиотеки [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api).
+
+Структура проекта основана на [go-clean-template](https://github.com/evrone/go-clean-template).
+
+В качестве СУБД выбрана **PostgreSQL**.
+
+При запуске исполняемого файла первым аргументом командрой строки передаётся путь до файла конфигурации `.env` (аналогичного файлу `example.env`). 
+
 <a id="chapter-2"></a>
 
 ## :zap: Запуск
 
-1. В docker-контейнере с использованием docker-compose
+0. Создать файл конфигурации `.env` (аналогичный файлу `example.env`) и задать в нем значения параметров.
+
+1. В docker-контейнере
 
 ```bash 
+docker-compose up --build
+```
+
+Аналогично с использованием `make`:
+```bash 
 make up
+```
+
+2. Локальный запуск
+
+```bash 
+docker-compose up postgres
+docker-compose up init-db
+go run ./... ./dev.env 
 ```
