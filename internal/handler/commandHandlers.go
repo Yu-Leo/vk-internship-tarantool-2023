@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -10,13 +11,21 @@ import (
 	"github.com/Yu-Leo/vk-internship-tarantool-2023/pkg/encoding"
 )
 
-func (h *Handler) set(msg *tgbotapi.Message) (string, error) {
+const maxStringLen = 80
+
+func (h *Handler) set(msg *tgbotapi.Message) (string, bool, error) {
 	input := strings.Split(msg.Text, " ")
 	if len(input) < 4 {
-		return invalidSetInputMessage, nil
+		return invalidSetInputMessage, false, nil
 	}
 
 	note := getNoteFromSet(input)
+
+	tooLong := utf8.RuneCountInString(note.ServiceName) > maxStringLen ||
+		utf8.RuneCountInString(note.Login) > maxStringLen || utf8.RuneCountInString(note.Password) > maxStringLen
+	if tooLong {
+		return fmt.Sprintf(tooLongMessage, maxStringLen), false, nil
+	}
 
 	rawPassword := note.Password
 	note.Password = encoding.Encode(note.Password)
@@ -24,17 +33,17 @@ func (h *Handler) set(msg *tgbotapi.Message) (string, error) {
 	err := h.noteRepository.Set(fmt.Sprint(msg.Chat.ID), note)
 
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	text := fmt.Sprintf(dataMessage, note.ServiceName, note.Login, rawPassword)
-	return text, nil
+	return text, true, nil
 }
 
-func (h *Handler) get(msg *tgbotapi.Message) (string, error) {
+func (h *Handler) get(msg *tgbotapi.Message) (string, bool, error) {
 	input := strings.Split(msg.Text, " ")
 	if len(input) < 2 {
-		return invalidGetInputMessage, nil
+		return invalidGetInputMessage, false, nil
 	}
 
 	serviceName := getServiceNameFromGetAndDel(input)
@@ -42,18 +51,18 @@ func (h *Handler) get(msg *tgbotapi.Message) (string, error) {
 	note, err := h.noteRepository.Get(fmt.Sprint(msg.Chat.ID), serviceName)
 	if err != nil {
 		text := fmt.Sprintf(serviceNotFoundMessage, serviceName)
-		return text, nil
+		return text, false, nil
 	}
 
 	note.Password, err = encoding.Decode(note.Password)
 	if err != nil {
 		text := fmt.Sprintf(serviceNotFoundMessage, serviceName)
-		return text, nil
+		return text, false, nil
 	}
 
 	text := fmt.Sprintf(dataMessage, note.ServiceName, note.Login, note.Password)
 
-	return text, nil
+	return text, true, nil
 }
 
 func (h *Handler) del(msg *tgbotapi.Message) (string, error) {

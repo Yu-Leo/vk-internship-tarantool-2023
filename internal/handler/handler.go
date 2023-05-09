@@ -50,13 +50,11 @@ func (h *Handler) handleMessage(reply tgbotapi.MessageConfig, msg *tgbotapi.Mess
 	case "start":
 		text = startMessage
 	case "set":
-		text, err = h.set(msg)
+		text, isMessageDeleted, err = h.set(msg)
 		reply.ParseMode = "markdown"
-		isMessageDeleted = true
 	case "get":
-		text, err = h.get(msg)
+		text, isMessageDeleted, err = h.get(msg)
 		reply.ParseMode = "markdown"
-		isMessageDeleted = true
 	case "del":
 		text, err = h.del(msg)
 		reply.ParseMode = "markdown"
