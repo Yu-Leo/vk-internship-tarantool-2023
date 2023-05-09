@@ -13,7 +13,7 @@ import (
 )
 
 func Run(logger *logrus.Logger) {
-	postgresConnection, err := postgresql.NewConnection(context.Background(), 2, &config.Cfg.Database)
+	postgresConnection, err := postgresql.NewConnection(context.Background(), 3, &config.Cfg.Database)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -33,10 +33,9 @@ func Run(logger *logrus.Logger) {
 
 	bot.Debug = false
 
-	logger.Infof("Authorized on account %s", bot.Self.UserName)
+	logger.Infof("Authorized on account https://t.me/%s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
 
